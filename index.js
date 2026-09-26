@@ -8,12 +8,58 @@ let users = {
     "avishkal907@gmail.com": { password: "avishkal@23", balance: 5.00, isAdmin: true }
 };
 
-let withdrawalRequests = []; // බැංකු මුදල් ඉල්ලුම් ගබඩා කිරීමට
+let withdrawalRequests = []; // Bank withdrawal requests queue
 
 let ads = [
-    { id: 1, title: "Crypto Exchange Banner Ad", reward: 5.00, duration: 5 },
-    { id: 2, title: "Online Shopping Promo Ad", reward: 3.50, duration: 5 },
-    { id: 3, title: "Web Hosting Special Offer", reward: 4.00, duration: 5 }
+    { 
+        id: 1, 
+        title: "Crypto Exchange Banner Ad", 
+        reward: 5.00, 
+        duration: 5,
+        script: `<script src="https://pl31523805.profitableratecpmnetwork.com/d5/03/82/d50382b8c9fcd1632430879e8c5ffc14.js"></script>`
+    },
+    { 
+        id: 2, 
+        title: "Online Shopping Promo Ad", 
+        reward: 3.50, 
+        duration: 5,
+        script: `<script src="https://pl31523806.profitableratecpmnetwork.com/4b/6a/a8/4b6aa80f27f43532bd988171cd4432d6.js"></script>`
+    },
+    { 
+        id: 3, 
+        title: "High Revenue Banner Ad (300x250)", 
+        reward: 4.00, 
+        duration: 5,
+        script: `
+            <script>
+              atOptions = {
+                'key' : '2e779619893af02539fc45624ffb5c30',
+                'format' : 'iframe',
+                'height' : 250,
+                'width' : 300,
+                'params' : {}
+              };
+            </script>
+            <script src="https://www.highrevenueformat.com/2e779619893af02539fc45624ffb5c30/invoke.js"></script>
+        `
+    },
+    { 
+        id: 4, 
+        title: "Social Bar / Native Ad Unit", 
+        reward: 6.00, 
+        duration: 5,
+        script: `
+            <script async="async" data-cfasync="false" src="https://pl31523808.profitableratecpmnetwork.com/6fdb76ef128e51cb4508880e53f89b7c/invoke.js"></script>
+            <div id="container-6fdb76ef128e51cb4508880e53f89b7c"></div>
+        `
+    },
+    { 
+        id: 5, 
+        title: "Direct Link Promotional Ad", 
+        reward: 4.50, 
+        duration: 5,
+        script: `<div class="p-4 text-center"><a href="https://www.profitableratecpmnetwork.com/sa6isizp1?key=16f08e32604d1a72f879384b894d9b64" target="_blank" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-emerald-500 transition">Click Here to Open Offer Ad 🚀</a></div>`
+    }
 ];
 
 // --- API ROUTES ---
@@ -21,13 +67,13 @@ let ads = [
 app.post('/api/register', (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
-        return res.json({ success: false, message: "කරුණාකර සියලුම තොරතුරු ඇතුළත් කරන්න!" });
+        return res.json({ success: false, message: "Please fill in all required fields!" });
     }
     if (users[username]) {
-        return res.json({ success: false, message: "මෙම ඊමේල් ලිපිනයෙන් දැනටමත් ගිණුමක් ඇත!" });
+        return res.json({ success: false, message: "An account with this email already exists!" });
     }
     users[username] = { password, balance: 0.00, isAdmin: false };
-    res.json({ success: true, message: "ලියාපදිංචිය සාර්ථකයි! දැන් ඔබට Login විය හැක." });
+    res.json({ success: true, message: "Registration successful! You can now log in." });
 });
 
 app.post('/api/login', (req, res) => {
@@ -40,7 +86,7 @@ app.post('/api/login', (req, res) => {
             isAdmin: users[username].isAdmin 
         });
     } else {
-        res.json({ success: false, message: "ඊමේල් ලිපිනය හෝ මුරපදය වැරදිය!" });
+        res.json({ success: false, message: "Invalid email address or password!" });
     }
 });
 
@@ -51,27 +97,27 @@ app.get('/api/ads', (req, res) => {
 app.post('/api/watch-ad', (req, res) => {
     const { username, adId } = req.body;
     if (!users[username]) {
-        return res.json({ success: false, message: "පරිශීලකයා හමු නොවීය." });
+        return res.json({ success: false, message: "User not found." });
     }
     const ad = ads.find(a => a.id === adId);
     if (!ad) {
-        return res.json({ success: false, message: "දැන්වීම හමු නොවීය." });
+        return res.json({ success: false, message: "Advertisement not found." });
     }
 
     users[username].balance += ad.reward;
     res.json({ success: true, newBalance: users[username].balance, reward: ad.reward });
 });
 
-// බැංකු මුදල් ඉල්ලුම් API එක
+// Bank Withdraw API Route
 app.post('/api/withdraw', (req, res) => {
     const { username, bankName, accName, accNumber, branch } = req.body;
     if (!users[username]) {
-        return res.json({ success: false, message: "පරිශීලකයා හමු නොවීය." });
+        return res.json({ success: false, message: "User not found." });
     }
 
     const balance = users[username].balance;
     if (balance < 100) {
-        return res.json({ success: false, message: "මුදල් ලබා ගැනීමට අවම ශේෂය LKR 100.00 ක් විය යුතුය!" });
+        return res.json({ success: false, message: "Minimum withdrawal threshold is LKR 100.00!" });
     }
 
     withdrawalRequests.push({
@@ -84,9 +130,9 @@ app.post('/api/withdraw', (req, res) => {
         date: new Date().toLocaleString()
     });
 
-    users[username].balance = 0.00; // ඉල්ලුම් කළ පසු ශේෂය ශුන්‍ය වේ
+    users[username].balance = 0.00; // Reset balance after request
 
-    res.json({ success: true, message: "බැංකු මුදල් ඉල්ලුම සාර්ථකව යොමු කරන ලදී!", newBalance: 0.00 });
+    res.json({ success: true, message: "Bank withdrawal request submitted successfully!", newBalance: 0.00 });
 });
 
 
@@ -94,7 +140,7 @@ app.post('/api/withdraw', (req, res) => {
 app.get('/', (req, res) => {
     res.send(`
         <!DOCTYPE html>
-        <html lang="si">
+        <html lang="en">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -108,7 +154,7 @@ app.get('/', (req, res) => {
                 <!-- AUTHENTICATION SECTION -->
                 <div id="auth-section">
                     <h1 class="text-3xl font-extrabold text-center text-indigo-400 mb-1">PTC Earn Money</h1>
-                    <p class="text-xs text-center text-gray-400 mb-6">Ads නරඹමින් ආදායම් උපයන වේදිකාව</p>
+                    <p class="text-xs text-center text-gray-400 mb-6">Earn money by viewing online advertisements</p>
                     
                     <div class="flex mb-6 border-b border-gray-800">
                         <button onclick="switchTab('login')" id="login-tab" class="w-1/2 py-2 font-bold text-indigo-400 border-b-2 border-indigo-500 cursor-pointer">Login</button>
@@ -118,7 +164,7 @@ app.get('/', (req, res) => {
                     <!-- Login Form -->
                     <div id="login-form" class="space-y-4">
                         <div>
-                            <label class="text-xs text-gray-400 mb-1 block">Email (Admin හෝ User)</label>
+                            <label class="text-xs text-gray-400 mb-1 block">Email (Admin or User)</label>
                             <input type="email" id="login-username" placeholder="name@example.com" class="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-indigo-500">
                         </div>
                         <div>
@@ -128,7 +174,7 @@ app.get('/', (req, res) => {
                         <button onclick="loginUser()" class="w-full bg-indigo-600 text-white p-3 rounded-lg font-bold hover:bg-indigo-500 transition cursor-pointer">Login</button>
                         
                         <div class="mt-4 p-3 bg-gray-800/50 rounded-lg border border-gray-800 text-xs text-gray-400">
-                            <span class="text-indigo-400 font-bold">Admin Login:</span><br>
+                            <span class="text-indigo-400 font-bold">Admin Credentials:</span><br>
                             Email: <code class="text-gray-200">avishkal907@gmail.com</code><br>
                             Pass: <code class="text-gray-200">avishkal@23</code>
                         </div>
@@ -151,62 +197,67 @@ app.get('/', (req, res) => {
                 <!-- DASHBOARD SECTION -->
                 <div id="dashboard-section" class="hidden">
                     <div class="flex justify-between items-center mb-6">
-                        <h1 class="text-xl font-bold text-indigo-400">ඩෑෂ්බෝඩ්</h1>
+                        <h1 class="text-xl font-bold text-indigo-400">Dashboard</h1>
                         <button onclick="logoutUser()" class="text-rose-400 text-xs font-bold border border-rose-500/50 px-3 py-1.5 rounded-lg hover:bg-rose-500/10 transition cursor-pointer">Logout</button>
                     </div>
                     
                     <div class="bg-gray-800/60 border border-gray-800 p-4 rounded-xl mb-4 space-y-1">
-                        <p class="text-xs text-gray-400">පරිශීලකයා: <span id="dash-username" class="font-bold text-gray-200"></span></p>
-                        <p class="text-xs text-gray-400">ශේෂය (Balance): <span class="font-bold text-emerald-400 text-base">LKR <span id="dash-balance">0.00</span></span></p>
+                        <p class="text-xs text-gray-400">User: <span id="dash-username" class="font-bold text-gray-200"></span></p>
+                        <p class="text-xs text-gray-400">Account Balance: <span class="font-bold text-emerald-400 text-base">LKR <span id="dash-balance">0.00</span></span></p>
                         <div id="admin-badge" class="hidden pt-1">
                             <span class="bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold">Admin Account</span>
                         </div>
                     </div>
 
                     <!-- Withdraw Button -->
-                    <button onclick="openWithdrawModal()" class="w-full bg-purple-600 text-white py-2.5 rounded-lg font-bold text-sm mb-6 hover:bg-purple-500 transition cursor-pointer shadow-lg shadow-purple-900/30">බැංකුවට මුදල් ඉල්ලා සිටින්න (Withdraw)</button>
+                    <button onclick="openWithdrawModal()" class="w-full bg-purple-600 text-white py-2.5 rounded-lg font-bold text-sm mb-6 hover:bg-purple-500 transition cursor-pointer shadow-lg shadow-purple-900/30">Request Bank Withdrawal</button>
 
-                    <h2 class="text-sm font-semibold text-gray-300 mb-3">නරඹන්න ඇති දැන්වීම්</h2>
+                    <h2 class="text-sm font-semibold text-gray-300 mb-3">Available Advertisements</h2>
                     <div id="ads-container" class="space-y-3 max-h-60 overflow-y-auto pr-1"></div>
                 </div>
 
             </div>
 
             <!-- Ad Timer Modal -->
-            <div id="modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs flex justify-center items-center p-4">
-                <div class="bg-gray-900 border border-gray-800 p-6 rounded-2xl max-w-sm w-full text-center shadow-2xl">
-                    <h3 class="text-base font-bold text-gray-200 mb-1">දැන්වීම නරඹමින් පවතී...</h3>
+            <div id="modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs flex flex-col justify-center items-center p-4">
+                <div class="bg-gray-900 border border-gray-800 p-6 rounded-2xl max-w-sm w-full text-center shadow-2xl relative">
+                    <h3 class="text-base font-bold text-gray-200 mb-1">Viewing Advertisement...</h3>
                     <p id="timer" class="text-5xl font-black text-indigo-400 my-4">5</p>
-                    <p class="text-xs text-gray-400">ටයිමර් එක අවසන් වනතුරු මෙම කවුළුවේ රැඳී සිටින්න.</p>
+                    <p class="text-xs text-gray-400 mb-4">Please stay on this window until the timer finishes.</p>
+                    
+                    <!-- Real Adsterra Banner Injection Inside Modal -->
+                    <div id="adsterra-banner-box" class="flex justify-center items-center min-h-[50px] bg-gray-950/50 p-2 rounded-lg border border-gray-800 overflow-hidden">
+                        <!-- Script will load here -->
+                    </div>
                 </div>
             </div>
 
             <!-- Bank Withdraw Modal -->
             <div id="withdraw-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs flex justify-center items-center p-4">
                 <div class="bg-gray-900 border border-gray-800 p-6 rounded-2xl max-w-sm w-full shadow-2xl space-y-3">
-                    <h3 class="text-base font-bold text-purple-400">බැංකු ගිණුම් විස්තර</h3>
-                    <p class="text-[11px] text-gray-400">අවම මුදල් ඉල්ලුම් කිරීමේ සීමාව LKR 100.00 කි.</p>
+                    <h3 class="text-base font-bold text-purple-400">Bank Account Details</h3>
+                    <p class="text-[11px] text-gray-400">Minimum withdrawal limit is LKR 100.00.</p>
                     
                     <div>
-                        <label class="text-[11px] text-gray-400 block mb-1">බැංකුවේ නම (Bank Name)</label>
-                        <input type="text" id="bank-name" placeholder="உദാ: BOC / Commercial Bank" class="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-xs">
+                        <label class="text-[11px] text-gray-400 block mb-1">Bank Name</label>
+                        <input type="text" id="bank-name" placeholder="e.g., BOC / Commercial Bank" class="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-xs">
                     </div>
                     <div>
-                        <label class="text-[11px] text-gray-400 block mb-1">ගිණුම් හිමියාගේ නම</label>
+                        <label class="text-[11px] text-gray-400 block mb-1">Account Holder Name</label>
                         <input type="text" id="acc-name" placeholder="Account Holder Name" class="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-xs">
                     </div>
                     <div>
-                        <label class="text-[11px] text-gray-400 block mb-1">ගිණුම් අංකය</label>
+                        <label class="text-[11px] text-gray-400 block mb-1">Account Number</label>
                         <input type="text" id="acc-number" placeholder="Account Number" class="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-xs">
                     </div>
                     <div>
-                        <label class="text-[11px] text-gray-400 block mb-1">ශාഖාව (Branch)</label>
+                        <label class="text-[11px] text-gray-400 block mb-1">Branch Name</label>
                         <input type="text" id="branch" placeholder="Branch Name" class="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-xs">
                     </div>
                     
                     <div class="flex space-x-2 pt-2">
-                        <button onclick="submitWithdraw()" class="w-1/2 bg-emerald-600 text-white py-2.5 rounded-lg text-xs font-bold hover:bg-emerald-500 cursor-pointer">ඉල්ලුම් කරන්න</button>
-                        <button onclick="closeWithdrawModal()" class="w-1/2 bg-gray-700 text-white py-2.5 rounded-lg text-xs font-bold hover:bg-gray-600 cursor-pointer">අවලංගුයි</button>
+                        <button onclick="submitWithdraw()" class="w-1/2 bg-emerald-600 text-white py-2.5 rounded-lg text-xs font-bold hover:bg-emerald-500 cursor-pointer">Submit</button>
+                        <button onclick="closeWithdrawModal()" class="w-1/2 bg-gray-700 text-white py-2.5 rounded-lg text-xs font-bold hover:bg-gray-600 cursor-pointer">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -310,15 +361,20 @@ app.get('/', (req, res) => {
                                     <h4 class="font-bold text-xs text-gray-200">\${ad.title}</h4>
                                     <p class="text-[11px] text-emerald-400 font-semibold mt-0.5">+ LKR \${ad.reward}</p>
                                 </div>
-                                <button onclick="watchAd(\${ad.id}, \${ad.duration})" class="bg-indigo-600 text-white px-3 py-1.5 text-xs font-bold rounded-md hover:bg-indigo-500 transition cursor-pointer">View Ad</button>
+                                <button onclick="watchAd(\${ad.id}, \${ad.duration}, \`\${encodeURIComponent(ad.script)}\`)" class="bg-indigo-600 text-white px-3 py-1.5 text-xs font-bold rounded-md hover:bg-indigo-500 transition cursor-pointer">View Ad</button>
                             </div>
                         \`;
                     });
                 }
 
-                function watchAd(adId, duration) {
+                function watchAd(adId, duration, encodedScript) {
                     const modal = document.getElementById('modal');
                     const timerEl = document.getElementById('timer');
+                    const adBox = document.getElementById('adsterra-banner-box');
+                    
+                    // Inject Adsterra Script into modal
+                    adBox.innerHTML = decodeURIComponent(encodedScript);
+                    
                     modal.classList.remove('hidden');
                     
                     let timeLeft = duration;
@@ -331,6 +387,7 @@ app.get('/', (req, res) => {
                         if (timeLeft <= 0) {
                             clearInterval(interval);
                             modal.classList.add('hidden');
+                            adBox.innerHTML = ''; // Clear ad
 
                             const res = await fetch('/api/watch-ad', {
                                 method: 'POST',
@@ -342,7 +399,7 @@ app.get('/', (req, res) => {
                                 currentBalance = data.newBalance;
                                 localStorage.setItem('ptc_balance', currentBalance);
                                 document.getElementById('dash-balance').innerText = currentBalance.toFixed(2);
-                                alert(\`සුභ පැතුම්! LKR \${data.reward} ක් එකතු විය.\`);
+                                alert(\`Success! LKR \${data.reward} added to your balance.\`);
                             }
                         }
                     }, 1000);
@@ -350,7 +407,7 @@ app.get('/', (req, res) => {
 
                 function openWithdrawModal() {
                     if (currentBalance < 100) {
-                        alert("මුදල් ලබා ගැනීමට අවම ශේෂය LKR 100.00 ක් විය යුතුය!");
+                        alert("Minimum withdrawal limit is LKR 100.00!");
                         return;
                     }
                     document.getElementById('withdraw-modal').classList.remove('hidden');
@@ -367,7 +424,7 @@ app.get('/', (req, res) => {
                     const branch = document.getElementById('branch').value.trim();
 
                     if (!bankName || !accName || !accNumber || !branch) {
-                        alert("කරුණාකර සියලුම බැංකු තොරතුරු පුරවන්න!");
+                        alert("Please fill in all bank details!");
                         return;
                     }
 
