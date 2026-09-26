@@ -4,10 +4,11 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// මුලින්ම ඇතුළත් කළ Admin ගිණුම සහ අනෙකුත් පරිශීලකයින්
 let users = {
-    "avishkal907@gmail.com": { password: "avishkal@23", balance: 0.00, isAdmin: true }
+    "avishkal907@gmail.com": { password: "avishkal@23", balance: 5.00, isAdmin: true }
 };
+
+let withdrawalRequests = []; // බැංකු මුදල් ඉල්ලුම් ගබඩා කිරීමට
 
 let ads = [
     { id: 1, title: "Crypto Exchange Banner Ad", reward: 5.00, duration: 5 },
@@ -61,6 +62,33 @@ app.post('/api/watch-ad', (req, res) => {
     res.json({ success: true, newBalance: users[username].balance, reward: ad.reward });
 });
 
+// බැංකු මුදල් ඉල්ලුම් API එක
+app.post('/api/withdraw', (req, res) => {
+    const { username, bankName, accName, accNumber, branch } = req.body;
+    if (!users[username]) {
+        return res.json({ success: false, message: "පරිශීලකයා හමු නොවීය." });
+    }
+
+    const balance = users[username].balance;
+    if (balance < 100) {
+        return res.json({ success: false, message: "මුදල් ලබා ගැනීමට අවම ශේෂය LKR 100.00 ක් විය යුතුය!" });
+    }
+
+    withdrawalRequests.push({
+        username,
+        bankName,
+        accName,
+        accNumber,
+        branch,
+        amount: balance,
+        date: new Date().toLocaleString()
+    });
+
+    users[username].balance = 0.00; // ඉල්ලුම් කළ පසු ශේෂය ශුන්‍ය වේ
+
+    res.json({ success: true, message: "බැංකු මුදල් ඉල්ලුම සාර්ථකව යොමු කරන ලදී!", newBalance: 0.00 });
+});
+
 
 // --- FRONTEND (DARK THEME HTML / CSS / JS) ---
 app.get('/', (req, res) => {
@@ -73,7 +101,7 @@ app.get('/', (req, res) => {
             <title>PTC Earn Money - Dark Edition</title>
             <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
         </head>
-        <body class="bg-gray-950 text-gray-100 font-sans flex justify-center items-center min-h-screen">
+        <body class="bg-gray-950 text-gray-100 font-sans flex justify-center items-center min-h-screen p-4">
 
             <div class="max-w-md w-full bg-gray-900 border border-gray-800 p-6 rounded-xl shadow-2xl">
                 
@@ -123,17 +151,20 @@ app.get('/', (req, res) => {
                 <!-- DASHBOARD SECTION -->
                 <div id="dashboard-section" class="hidden">
                     <div class="flex justify-between items-center mb-6">
-                        <h1 class="text-xl font-bold text-indigo-400">ডෑෂ්බෝඩ්</h1>
+                        <h1 class="text-xl font-bold text-indigo-400">ඩෑෂ්බෝඩ්</h1>
                         <button onclick="logoutUser()" class="text-rose-400 text-xs font-bold border border-rose-500/50 px-3 py-1.5 rounded-lg hover:bg-rose-500/10 transition cursor-pointer">Logout</button>
                     </div>
                     
-                    <div class="bg-gray-800/60 border border-gray-800 p-4 rounded-xl mb-6 space-y-1">
+                    <div class="bg-gray-800/60 border border-gray-800 p-4 rounded-xl mb-4 space-y-1">
                         <p class="text-xs text-gray-400">පරිශීලකයා: <span id="dash-username" class="font-bold text-gray-200"></span></p>
                         <p class="text-xs text-gray-400">ශේෂය (Balance): <span class="font-bold text-emerald-400 text-base">LKR <span id="dash-balance">0.00</span></span></p>
                         <div id="admin-badge" class="hidden pt-1">
                             <span class="bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold">Admin Account</span>
                         </div>
                     </div>
+
+                    <!-- Withdraw Button -->
+                    <button onclick="openWithdrawModal()" class="w-full bg-purple-600 text-white py-2.5 rounded-lg font-bold text-sm mb-6 hover:bg-purple-500 transition cursor-pointer shadow-lg shadow-purple-900/30">බැංකුවට මුදල් ඉල්ලා සිටින්න (Withdraw)</button>
 
                     <h2 class="text-sm font-semibold text-gray-300 mb-3">නරඹන්න ඇති දැන්වීම්</h2>
                     <div id="ads-container" class="space-y-3 max-h-60 overflow-y-auto pr-1"></div>
@@ -142,11 +173,41 @@ app.get('/', (req, res) => {
             </div>
 
             <!-- Ad Timer Modal -->
-            <div id="modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs flex justify-center items-center">
+            <div id="modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs flex justify-center items-center p-4">
                 <div class="bg-gray-900 border border-gray-800 p-6 rounded-2xl max-w-sm w-full text-center shadow-2xl">
                     <h3 class="text-base font-bold text-gray-200 mb-1">දැන්වීම නරඹමින් පවතී...</h3>
                     <p id="timer" class="text-5xl font-black text-indigo-400 my-4">5</p>
                     <p class="text-xs text-gray-400">ටයිමර් එක අවසන් වනතුරු මෙම කවුළුවේ රැඳී සිටින්න.</p>
+                </div>
+            </div>
+
+            <!-- Bank Withdraw Modal -->
+            <div id="withdraw-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs flex justify-center items-center p-4">
+                <div class="bg-gray-900 border border-gray-800 p-6 rounded-2xl max-w-sm w-full shadow-2xl space-y-3">
+                    <h3 class="text-base font-bold text-purple-400">බැංකු ගිණුම් විස්තර</h3>
+                    <p class="text-[11px] text-gray-400">අවම මුදල් ඉල්ලුම් කිරීමේ සීමාව LKR 100.00 කි.</p>
+                    
+                    <div>
+                        <label class="text-[11px] text-gray-400 block mb-1">බැංකුවේ නම (Bank Name)</label>
+                        <input type="text" id="bank-name" placeholder="உദാ: BOC / Commercial Bank" class="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-gray-400 block mb-1">ගිණුම් හිමියාගේ නම</label>
+                        <input type="text" id="acc-name" placeholder="Account Holder Name" class="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-gray-400 block mb-1">ගිණුම් අංකය</label>
+                        <input type="text" id="acc-number" placeholder="Account Number" class="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-gray-400 block mb-1">ශාഖාව (Branch)</label>
+                        <input type="text" id="branch" placeholder="Branch Name" class="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-xs">
+                    </div>
+                    
+                    <div class="flex space-x-2 pt-2">
+                        <button onclick="submitWithdraw()" class="w-1/2 bg-emerald-600 text-white py-2.5 rounded-lg text-xs font-bold hover:bg-emerald-500 cursor-pointer">ඉල්ලුම් කරන්න</button>
+                        <button onclick="closeWithdrawModal()" class="w-1/2 bg-gray-700 text-white py-2.5 rounded-lg text-xs font-bold hover:bg-gray-600 cursor-pointer">අවලංගුයි</button>
+                    </div>
                 </div>
             </div>
 
@@ -285,6 +346,44 @@ app.get('/', (req, res) => {
                             }
                         }
                     }, 1000);
+                }
+
+                function openWithdrawModal() {
+                    if (currentBalance < 100) {
+                        alert("මුදල් ලබා ගැනීමට අවම ශේෂය LKR 100.00 ක් විය යුතුය!");
+                        return;
+                    }
+                    document.getElementById('withdraw-modal').classList.remove('hidden');
+                }
+
+                function closeWithdrawModal() {
+                    document.getElementById('withdraw-modal').classList.add('hidden');
+                }
+
+                async function submitWithdraw() {
+                    const bankName = document.getElementById('bank-name').value.trim();
+                    const accName = document.getElementById('acc-name').value.trim();
+                    const accNumber = document.getElementById('acc-number').value.trim();
+                    const branch = document.getElementById('branch').value.trim();
+
+                    if (!bankName || !accName || !accNumber || !branch) {
+                        alert("කරුණාකර සියලුම බැංකු තොරතුරු පුරවන්න!");
+                        return;
+                    }
+
+                    const res = await fetch('/api/withdraw', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: currentUser, bankName, accName, accNumber, branch })
+                    });
+                    const data = await res.json();
+                    alert(data.message);
+                    if (data.success) {
+                        currentBalance = data.newBalance;
+                        localStorage.setItem('ptc_balance', currentBalance);
+                        document.getElementById('dash-balance').innerText = currentBalance.toFixed(2);
+                        closeWithdrawModal();
+                    }
                 }
 
                 checkAuth();
