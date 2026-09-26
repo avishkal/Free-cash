@@ -5,32 +5,25 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 let users = {
-    "avishkal907@gmail.com": { password: "avishkal@23", balance: 5.00, isAdmin: true }
+    "avishkal907@gmail.com": { password: "avishkal@23", balance: 14.50, isAdmin: true }
 };
 
-let withdrawalRequests = []; // Bank withdrawal requests queue
+let withdrawalRequests = [];
 
 let ads = [
     { 
         id: 1, 
         title: "Crypto Exchange Banner Ad", 
         reward: 5.00, 
-        duration: 5,
-        script: `<script src="https://pl31523805.profitableratecpmnetwork.com/d5/03/82/d50382b8c9fcd1632430879e8c5ffc14.js"></script>`
+        type: "banner",
+        content: `<script src="https://pl31523805.profitableratecpmnetwork.com/d5/03/82/d50382b8c9fcd1632430879e8c5ffc14.js"></script>`
     },
     { 
         id: 2, 
-        title: "Online Shopping Promo Ad", 
-        reward: 3.50, 
-        duration: 5,
-        script: `<script src="https://pl31523806.profitableratecpmnetwork.com/4b/6a/a8/4b6aa80f27f43532bd988171cd4432d6.js"></script>`
-    },
-    { 
-        id: 3, 
         title: "High Revenue Banner Ad (300x250)", 
         reward: 4.00, 
-        duration: 5,
-        script: `
+        type: "banner",
+        content: `
             <script>
               atOptions = {
                 'key' : '2e779619893af02539fc45624ffb5c30',
@@ -44,21 +37,21 @@ let ads = [
         `
     },
     { 
-        id: 4, 
+        id: 3, 
         title: "Social Bar / Native Ad Unit", 
         reward: 6.00, 
-        duration: 5,
-        script: `
+        type: "banner",
+        content: `
             <script async="async" data-cfasync="false" src="https://pl31523808.profitableratecpmnetwork.com/6fdb76ef128e51cb4508880e53f89b7c/invoke.js"></script>
             <div id="container-6fdb76ef128e51cb4508880e53f89b7c"></div>
         `
     },
     { 
-        id: 5, 
+        id: 4, 
         title: "Direct Link Promotional Ad", 
         reward: 4.50, 
-        duration: 5,
-        script: `<div style="padding:16px; text-align:center;"><a href="https://www.profitableratecpmnetwork.com/sa6isizp1?key=16f08e32604d1a72f879384b894d9b64" target="_blank" style="background:#059669; color:#ffffff; padding:10px 16px; border-radius:8px; font-weight:bold; font-size:12px; text-decoration:none;">Click Here to Open Offer Ad 🚀</a></div>`
+        type: "link",
+        url: "https://www.profitableratecpmnetwork.com/sa6isizp1?key=16f08e32604d1a72f879384b894d9b64"
     }
 ];
 
@@ -130,12 +123,11 @@ app.post('/api/withdraw', (req, res) => {
     });
 
     users[username].balance = 0.00;
-
     res.json({ success: true, message: "Bank withdrawal request submitted successfully!", newBalance: 0.00 });
 });
 
 
-// --- FRONTEND (HTML / CSS / JS) ---
+// --- FRONTEND ---
 app.get('/', (req, res) => {
     res.send(`
         <!DOCTYPE html>
@@ -150,7 +142,7 @@ app.get('/', (req, res) => {
 
             <div class="max-w-md w-full bg-gray-900 border border-gray-800 p-6 rounded-xl shadow-2xl">
                 
-                <!-- AUTHENTICATION SECTION -->
+                <!-- AUTH SECTION -->
                 <div id="auth-section">
                     <h1 class="text-3xl font-extrabold text-center text-indigo-400 mb-1">PTC Earn Money</h1>
                     <p class="text-xs text-center text-gray-400 mb-6">Earn money by viewing online advertisements</p>
@@ -160,7 +152,6 @@ app.get('/', (req, res) => {
                         <button type="button" onclick="switchTab('register')" id="register-tab" class="w-1/2 py-2 font-bold text-gray-500 cursor-pointer">Register</button>
                     </div>
 
-                    <!-- Login Form -->
                     <div id="login-form" class="space-y-4">
                         <div>
                             <label class="text-xs text-gray-400 mb-1 block">Email</label>
@@ -173,7 +164,6 @@ app.get('/', (req, res) => {
                         <button type="button" onclick="loginUser()" class="w-full bg-indigo-600 text-white p-3 rounded-lg font-bold hover:bg-indigo-500 transition cursor-pointer">Login</button>
                     </div>
 
-                    <!-- Register Form -->
                     <div id="register-form" class="space-y-4 hidden">
                         <div>
                             <label class="text-xs text-gray-400 mb-1 block">Email Address</label>
@@ -202,24 +192,13 @@ app.get('/', (req, res) => {
                         </div>
                     </div>
 
-                    <!-- Withdraw Button -->
                     <button type="button" onclick="openWithdrawModal()" class="w-full bg-purple-600 text-white py-2.5 rounded-lg font-bold text-sm mb-6 hover:bg-purple-500 transition cursor-pointer shadow-lg shadow-purple-900/30">Request Bank Withdrawal</button>
 
-                    <!-- Auto Play Status Box -->
-                    <div class="bg-indigo-950/40 border border-indigo-900/50 p-4 rounded-xl mb-4 text-center">
-                        <h2 class="text-xs font-bold text-indigo-300 uppercase tracking-wider mb-1">Auto-Play Status</h2>
-                        <p id="auto-status" class="text-sm font-semibold text-emerald-400">Initializing auto-play...</p>
-                        <div id="auto-timer" class="text-3xl font-black text-indigo-400 my-2">--</div>
-                    </div>
-
-                    <h2 class="text-sm font-semibold text-gray-300 mb-3">Advertisement Status</h2>
-                    <div id="ads-container" class="space-y-3 max-h-48 overflow-y-auto pr-1"></div>
+                    <h2 class="text-sm font-semibold text-gray-300 mb-3">Available Advertisements</h2>
+                    <div id="ads-container" class="space-y-4 max-h-80 overflow-y-auto pr-1"></div>
                 </div>
 
             </div>
-
-            <!-- Hidden Container for Loading Ad Scripts safely -->
-            <div id="hidden-ad-container" class="hidden"></div>
 
             <!-- Bank Withdraw Modal -->
             <div id="withdraw-modal" class="hidden fixed inset-0 bg-black/80 flex justify-center items-center p-4 z-50">
@@ -255,7 +234,6 @@ app.get('/', (req, res) => {
                 let currentUser = localStorage.getItem('ptc_user') || null;
                 let currentBalance = parseFloat(localStorage.getItem('ptc_balance')) || 0.00;
                 let isAdmin = localStorage.getItem('ptc_is_admin') === 'true';
-                let isAutoPlaying = false;
 
                 function switchTab(tab) {
                     if (tab === 'login') {
@@ -274,11 +252,7 @@ app.get('/', (req, res) => {
                 async function registerUser() {
                     const username = document.getElementById('reg-username').value.trim();
                     const password = document.getElementById('reg-password').value.trim();
-                    
-                    if (!username || !password) {
-                        alert("Please fill in all fields!");
-                        return;
-                    }
+                    if (!username || !password) { alert("Please fill in all fields!"); return; }
 
                     try {
                         const res = await fetch('/api/register', {
@@ -289,19 +263,13 @@ app.get('/', (req, res) => {
                         const data = await res.json();
                         alert(data.message);
                         if (data.success) switchTab('login');
-                    } catch (err) {
-                        alert("Connection error!");
-                    }
+                    } catch (err) { alert("Connection error!"); }
                 }
 
                 async function loginUser() {
                     const username = document.getElementById('login-username').value.trim();
                     const password = document.getElementById('login-password').value.trim();
-
-                    if (!username || !password) {
-                        alert("Please fill in all fields!");
-                        return;
-                    }
+                    if (!username || !password) { alert("Please fill in all fields!"); return; }
 
                     try {
                         const res = await fetch('/api/login', {
@@ -320,19 +288,14 @@ app.get('/', (req, res) => {
                             localStorage.setItem('ptc_balance', currentBalance);
                             localStorage.setItem('ptc_is_admin', isAdmin);
                             loadDashboard();
-                        } else {
-                            alert(data.message);
-                        }
-                    } catch (err) {
-                        alert("Connection error!");
-                    }
+                        } else { alert(data.message); }
+                    } catch (err) { alert("Connection error!"); }
                 }
 
                 function logoutUser() {
                     currentUser = null;
                     currentBalance = 0.00;
                     isAdmin = false;
-                    isAutoPlaying = false;
                     localStorage.clear();
                     checkAuth();
                 }
@@ -365,91 +328,46 @@ app.get('/', (req, res) => {
                         container.innerHTML = '';
 
                         ads.forEach(ad => {
+                            let adContentHtml = '';
+                            if (ad.type === 'banner') {
+                                adContentHtml = \`<div class="my-2 p-2 bg-gray-900 rounded flex justify-center">\${ad.content}</div>\`;
+                            }
+
                             container.innerHTML += \`
-                                <div id="ad-item-\${ad.id}" class="p-3 bg-gray-800/40 border border-gray-800 rounded-lg flex justify-between items-center">
-                                    <div>
-                                        <h4 class="font-bold text-xs text-gray-200">\${ad.title}</h4>
-                                        <p class="text-[11px] text-emerald-400 font-semibold mt-0.5">+ LKR \${ad.reward}</p>
+                                <div class="p-3 bg-gray-800/40 border border-gray-800 rounded-xl space-y-2">
+                                    <div class="flex justify-between items-center">
+                                        <div>
+                                            <h4 class="font-bold text-xs text-gray-200">\${ad.title}</h4>
+                                            <p class="text-[11px] text-emerald-400 font-semibold mt-0.5">+ LKR \${ad.reward}</p>
+                                        </div>
+                                        <button onclick="watchAd(\${ad.id}, '\${ad.type}', '\${ad.url || ''}')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer">View Ad</button>
                                     </div>
-                                    <span id="ad-status-\${ad.id}" class="text-[10px] font-bold px-2 py-1 bg-gray-700 text-gray-300 rounded-md">Waiting</span>
+                                    \${adContentHtml}
                                 </div>
                             \`;
                         });
-
-                        // Start Auto Play sequence if not already running
-                        if (!isAutoPlaying) {
-                            startAutoPlaySequence(ads);
-                        }
-                    } catch (err) {
-                        console.error(err);
-                    }
+                    } catch (err) { console.error(err); }
                 }
 
-                async function startAutoPlaySequence(ads) {
-                    isAutoPlaying = true;
-                    const statusText = document.getElementById('auto-status');
-                    const timerText = document.getElementById('auto-timer');
-                    const hiddenContainer = document.getElementById('hidden-ad-container');
-
-                    for (let i = 0; i < ads.length; i++) {
-                        let ad = ads[i];
-                        if (!currentUser) break; // If logged out, stop
-
-                        const statusBadge = document.getElementById(\`ad-status-\${ad.id}\`);
-                        if (statusBadge) {
-                            statusBadge.innerText = "Playing...";
-                            statusBadge.className = "text-[10px] font-bold px-2 py-1 bg-indigo-500/20 text-indigo-400 rounded-md border border-indigo-500/30";
-                        }
-
-                        statusText.innerText = \`Playing: \${ad.title}\`;
-                        
-                        // Inject Ad Script
-                        hiddenContainer.innerHTML = ad.script;
-
-                        let timeLeft = ad.duration;
-                        timerText.innerText = timeLeft;
-
-                        // Countdown loop for this ad
-                        await new Promise((resolve) => {
-                            const interval = setInterval(() => {
-                                timeLeft--;
-                                timerText.innerText = timeLeft;
-
-                                if (timeLeft <= 0) {
-                                    clearInterval(interval);
-                                    resolve();
-                                }
-                            }, 1000);
-                        });
-
-                        hiddenContainer.innerHTML = ''; // Clear script
-
-                        // Send reward request to server
-                        try {
-                            const res = await fetch('/api/watch-ad', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ username: currentUser, adId: ad.id })
-                            });
-                            const data = await res.json();
-                            if (data.success) {
-                                currentBalance = data.newBalance;
-                                localStorage.setItem('ptc_balance', currentBalance);
-                                document.getElementById('dash-balance').innerText = currentBalance.toFixed(2);
-
-                                if (statusBadge) {
-                                    statusBadge.innerText = "Completed";
-                                    statusBadge.className = "text-[10px] font-bold px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded-md border border-emerald-500/30";
-                                }
-                            }
-                        } catch (err) {
-                            console.error(err);
-                        }
+                async function watchAd(adId, type, url) {
+                    if (type === 'link' && url) {
+                        window.open(url, '_blank');
                     }
 
-                    statusText.innerText = "All advertisements completed! 🎉";
-                    timerText.innerText = "✔";
-                    isAutoPlaying = false;
+                    try {
+                        const res = await fetch('/api/watch-ad', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ username: currentUser, adId: adId })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            currentBalance = data.newBalance;
+                            localStorage.setItem('ptc_balance', currentBalance);
+                            document.getElementById('dash-balance').innerText = currentBalance.toFixed(2);
+                            alert("Reward added successfully!");
+                        }
+                    } catch (err) { console.error(err); }
                 }
 
                 function openWithdrawModal() {
@@ -489,9 +407,7 @@ app.get('/', (req, res) => {
                             document.getElementById('dash-balance').innerText = currentBalance.toFixed(2);
                             closeWithdrawModal();
                         }
-                    } catch (err) {
-                        alert("Connection error!");
-                    }
+                    } catch (err) { alert("Connection error!"); }
                 }
 
                 checkAuth();
