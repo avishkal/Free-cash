@@ -4,14 +4,15 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// දත්ත ගබඩාව (පරිශීලක විස්තර සඳහා)
-let users = {};
+// මුලින්ම ඇතුළත් කළ Admin ගිණුම සහ අනෙකුත් පරිශීලකයින්
+let users = {
+    "avishkal907@gmail.com": { password: "avishkal@23", balance: 0.00, isAdmin: true }
+};
 
-// දැන්වීම් ලැයිස්තුව (මෙහි ඔබට Ad Network එකක Ad Codes හෝ බාහිර දැන්වීම් ලින්ක් දමාගත හැක)
 let ads = [
-    { id: 1, title: "Crypto Exchange Banner Ad", reward: 2.00, duration: 5, adUrl: "https://example.com/ad1" },
-    { id: 2, title: "Online Shopping Promo Ad", reward: 1.50, duration: 5, adUrl: "https://example.com/ad2" },
-    { id: 3, title: "Web Hosting Special Offer", reward: 2.50, duration: 5, adUrl: "https://example.com/ad3" }
+    { id: 1, title: "Crypto Exchange Banner Ad", reward: 5.00, duration: 5 },
+    { id: 2, title: "Online Shopping Promo Ad", reward: 3.50, duration: 5 },
+    { id: 3, title: "Web Hosting Special Offer", reward: 4.00, duration: 5 }
 ];
 
 // --- API ROUTES ---
@@ -22,18 +23,23 @@ app.post('/api/register', (req, res) => {
         return res.json({ success: false, message: "කරුණාකර සියලුම තොරතුරු ඇතුළත් කරන්න!" });
     }
     if (users[username]) {
-        return res.json({ success: false, message: "මෙම නමින් දැනටමත් ගිණුමක් ඇත!" });
+        return res.json({ success: false, message: "මෙම ඊමේල් ලිපිනයෙන් දැනටමත් ගිණුමක් ඇත!" });
     }
-    users[username] = { password, balance: 0.00 };
-    res.json({ success: true, message: "ලියාපදිංචිය සාර්ථකයි!" });
+    users[username] = { password, balance: 0.00, isAdmin: false };
+    res.json({ success: true, message: "ලියාපදිංචිය සාර්ථකයි! දැන් ඔබට Login විය හැක." });
 });
 
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     if (users[username] && users[username].password === password) {
-        res.json({ success: true, username, balance: users[username].balance });
+        res.json({ 
+            success: true, 
+            username, 
+            balance: users[username].balance,
+            isAdmin: users[username].isAdmin 
+        });
     } else {
-        res.json({ success: false, message: "පරිශීලක නාමය හෝ මුරපදය වැරදිය!" });
+        res.json({ success: false, message: "ඊමේල් ලිපිනය හෝ මුරපදය වැරදිය!" });
     }
 });
 
@@ -56,7 +62,7 @@ app.post('/api/watch-ad', (req, res) => {
 });
 
 
-// --- FRONTEND (HTML / CSS / JS) ---
+// --- FRONTEND (DARK THEME HTML / CSS / JS) ---
 app.get('/', (req, res) => {
     res.send(`
         <!DOCTYPE html>
@@ -64,84 +70,102 @@ app.get('/', (req, res) => {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>PTC Earn Money Website</title>
+            <title>PTC Earn Money - Dark Edition</title>
             <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
         </head>
-        <body class="bg-gray-100 font-sans flex justify-center items-center min-h-screen">
+        <body class="bg-gray-950 text-gray-100 font-sans flex justify-center items-center min-h-screen">
 
-            <div class="max-w-md w-full bg-white p-6 rounded-lg shadow-lg">
+            <div class="max-w-md w-full bg-gray-900 border border-gray-800 p-6 rounded-xl shadow-2xl">
                 
                 <!-- AUTHENTICATION SECTION -->
                 <div id="auth-section">
-                    <h1 class="text-2xl font-bold text-center text-blue-600 mb-2">PTC Earn Money</h1>
-                    <p class="text-xs text-center text-gray-500 mb-6">Ads බලා ආදායම් උපයන වේදිකාව</p>
+                    <h1 class="text-3xl font-extrabold text-center text-indigo-400 mb-1">PTC Earn Money</h1>
+                    <p class="text-xs text-center text-gray-400 mb-6">Ads නරඹමින් ආදායම් උපයන වේදිකාව</p>
                     
-                    <div class="flex mb-4 border-b">
-                        <button onclick="switchTab('login')" id="login-tab" class="w-1/2 py-2 font-bold text-blue-600 border-b-2 border-blue-600 cursor-pointer">Login</button>
-                        <button onclick="switchTab('register')" id="register-tab" class="w-1/2 py-2 font-bold text-gray-400 cursor-pointer">Register</button>
+                    <div class="flex mb-6 border-b border-gray-800">
+                        <button onclick="switchTab('login')" id="login-tab" class="w-1/2 py-2 font-bold text-indigo-400 border-b-2 border-indigo-500 cursor-pointer">Login</button>
+                        <button onclick="switchTab('register')" id="register-tab" class="w-1/2 py-2 font-bold text-gray-500 cursor-pointer">Register</button>
                     </div>
 
                     <!-- Login Form -->
                     <div id="login-form" class="space-y-4">
-                        <input type="text" id="login-username" placeholder="පරිශීලක නාමය" class="w-full p-3 border rounded">
-                        <input type="password" id="login-password" placeholder="මුරපදය" class="w-full p-3 border rounded">
-                        <button onclick="loginUser()" class="w-full bg-blue-600 text-white p-3 rounded font-bold hover:bg-blue-700 cursor-pointer">Login</button>
+                        <div>
+                            <label class="text-xs text-gray-400 mb-1 block">Email (Admin හෝ User)</label>
+                            <input type="email" id="login-username" placeholder="name@example.com" class="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-indigo-500">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-400 mb-1 block">Password</label>
+                            <input type="password" id="login-password" placeholder="••••••••" class="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-indigo-500">
+                        </div>
+                        <button onclick="loginUser()" class="w-full bg-indigo-600 text-white p-3 rounded-lg font-bold hover:bg-indigo-500 transition cursor-pointer">Login</button>
+                        
+                        <div class="mt-4 p-3 bg-gray-800/50 rounded-lg border border-gray-800 text-xs text-gray-400">
+                            <span class="text-indigo-400 font-bold">Admin Login:</span><br>
+                            Email: <code class="text-gray-200">avishkal907@gmail.com</code><br>
+                            Pass: <code class="text-gray-200">avishkal@23</code>
+                        </div>
                     </div>
 
                     <!-- Register Form -->
                     <div id="register-form" class="space-y-4 hidden">
-                        <input type="text" id="reg-username" placeholder="පරිශීලක නාමය" class="w-full p-3 border rounded">
-                        <input type="password" id="reg-password" placeholder="මුරපදය" class="w-full p-3 border rounded">
-                        <button onclick="registerUser()" class="w-full bg-green-600 text-white p-3 rounded font-bold hover:bg-green-700 cursor-pointer">Register</button>
+                        <div>
+                            <label class="text-xs text-gray-400 mb-1 block">Email Address</label>
+                            <input type="email" id="reg-username" placeholder="name@example.com" class="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-emerald-500">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-400 mb-1 block">Password</label>
+                            <input type="password" id="reg-password" placeholder="••••••••" class="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-emerald-500">
+                        </div>
+                        <button onclick="registerUser()" class="w-full bg-emerald-600 text-white p-3 rounded-lg font-bold hover:bg-emerald-500 transition cursor-pointer">Create Account</button>
                     </div>
                 </div>
 
                 <!-- DASHBOARD SECTION -->
                 <div id="dashboard-section" class="hidden">
-                    <div class="flex justify-between items-center mb-4">
-                        <h1 class="text-xl font-bold text-blue-600">ডෑෂ්බෝඩ්</h1>
-                        <button onclick="logoutUser()" class="text-red-500 text-sm font-bold border border-red-500 px-3 py-1 rounded hover:bg-red-50 cursor-pointer">Logout</button>
+                    <div class="flex justify-between items-center mb-6">
+                        <h1 class="text-xl font-bold text-indigo-400">ডෑෂ්බෝඩ්</h1>
+                        <button onclick="logoutUser()" class="text-rose-400 text-xs font-bold border border-rose-500/50 px-3 py-1.5 rounded-lg hover:bg-rose-500/10 transition cursor-pointer">Logout</button>
                     </div>
                     
-                    <div class="bg-blue-50 p-4 rounded-md mb-6">
-                        <p class="text-gray-600">පරිශීලකයා: <span id="dash-username" class="font-bold text-gray-800"></span></p>
-                        <p class="text-gray-600">ඔබේ ඉපැයීම් ශේෂය: LKR <span id="dash-balance" class="font-bold text-green-600">0.00</span></p>
+                    <div class="bg-gray-800/60 border border-gray-800 p-4 rounded-xl mb-6 space-y-1">
+                        <p class="text-xs text-gray-400">පරිශීලකයා: <span id="dash-username" class="font-bold text-gray-200"></span></p>
+                        <p class="text-xs text-gray-400">ශේෂය (Balance): <span class="font-bold text-emerald-400 text-base">LKR <span id="dash-balance">0.00</span></span></p>
+                        <div id="admin-badge" class="hidden pt-1">
+                            <span class="bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold">Admin Account</span>
+                        </div>
                     </div>
 
-                    <div class="bg-amber-50 border border-amber-200 p-3 rounded-md mb-6 text-xs text-amber-800">
-                        💡 <b>Admin සටහන:</b> මෙම වෙබ් අඩවියේ ඇති දැන්වීම් හරහා ලැබෙන ප්‍රධාන ආදායම ඔබ සම්බන්ධ කර ඇති Ad Network ගිණුම හරහා ඔබේ බැංකු ගිණුමට එකතු වේ.
-                    </div>
-
-                    <h2 class="text-lg font-semibold mb-3">නරඹන්න ඇති දැන්වීම්</h2>
-                    <div id="ads-container" class="space-y-3 max-h-60 overflow-y-auto"></div>
+                    <h2 class="text-sm font-semibold text-gray-300 mb-3">නරඹන්න ඇති දැන්වීම්</h2>
+                    <div id="ads-container" class="space-y-3 max-h-60 overflow-y-auto pr-1"></div>
                 </div>
 
             </div>
 
             <!-- Ad Timer Modal -->
-            <div id="modal" class="hidden fixed inset-0 bg-black/50 flex justify-center items-center">
-                <div class="bg-white p-6 rounded-lg max-w-sm w-full text-center shadow-xl">
-                    <h3 class="text-lg font-bold mb-2">දැන්වීම නරඹමින් පවතී...</h3>
-                    <p id="timer" class="text-4xl font-bold text-blue-600 my-4">5</p>
-                    <p class="text-sm text-gray-500">ටයිමර් එක අවසන් වනතුරු රැඳී සිටින්න.</p>
+            <div id="modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs flex justify-center items-center">
+                <div class="bg-gray-900 border border-gray-800 p-6 rounded-2xl max-w-sm w-full text-center shadow-2xl">
+                    <h3 class="text-base font-bold text-gray-200 mb-1">දැන්වීම නරඹමින් පවතී...</h3>
+                    <p id="timer" class="text-5xl font-black text-indigo-400 my-4">5</p>
+                    <p class="text-xs text-gray-400">ටයිමර් එක අවසන් වනතුරු මෙම කවුළුවේ රැඳී සිටින්න.</p>
                 </div>
             </div>
 
             <script>
                 let currentUser = localStorage.getItem('ptc_user') || null;
                 let currentBalance = parseFloat(localStorage.getItem('ptc_balance')) || 0.00;
+                let isAdmin = localStorage.getItem('ptc_is_admin') === 'true';
 
                 function switchTab(tab) {
                     if (tab === 'login') {
                         document.getElementById('login-form').classList.remove('hidden');
                         document.getElementById('register-form').classList.add('hidden');
-                        document.getElementById('login-tab').className = "w-1/2 py-2 font-bold text-blue-600 border-b-2 border-blue-600 cursor-pointer";
-                        document.getElementById('register-tab').className = "w-1/2 py-2 font-bold text-gray-400 cursor-pointer";
+                        document.getElementById('login-tab').className = "w-1/2 py-2 font-bold text-indigo-400 border-b-2 border-indigo-500 cursor-pointer";
+                        document.getElementById('register-tab').className = "w-1/2 py-2 font-bold text-gray-500 cursor-pointer";
                     } else {
                         document.getElementById('login-form').classList.add('hidden');
                         document.getElementById('register-form').classList.remove('hidden');
-                        document.getElementById('register-tab').className = "w-1/2 py-2 font-bold text-green-600 border-b-2 border-green-600 cursor-pointer";
-                        document.getElementById('login-tab').className = "w-1/2 py-2 font-bold text-gray-400 cursor-pointer";
+                        document.getElementById('register-tab').className = "w-1/2 py-2 font-bold text-emerald-400 border-b-2 border-emerald-500 cursor-pointer";
+                        document.getElementById('login-tab').className = "w-1/2 py-2 font-bold text-gray-500 cursor-pointer";
                     }
                 }
 
@@ -173,8 +197,11 @@ app.get('/', (req, res) => {
                     if (data.success) {
                         currentUser = data.username;
                         currentBalance = data.balance;
+                        isAdmin = data.isAdmin;
+                        
                         localStorage.setItem('ptc_user', currentUser);
                         localStorage.setItem('ptc_balance', currentBalance);
+                        localStorage.setItem('ptc_is_admin', isAdmin);
                         loadDashboard();
                     } else {
                         alert(data.message);
@@ -183,8 +210,9 @@ app.get('/', (req, res) => {
 
                 function logoutUser() {
                     currentUser = null;
-                    localStorage.removeItem('ptc_user');
-                    localStorage.removeItem('ptc_balance');
+                    currentBalance = 0.00;
+                    isAdmin = false;
+                    localStorage.clear();
                     checkAuth();
                 }
 
@@ -203,6 +231,12 @@ app.get('/', (req, res) => {
                     document.getElementById('dash-username').innerText = currentUser;
                     document.getElementById('dash-balance').innerText = currentBalance.toFixed(2);
                     
+                    if (isAdmin) {
+                        document.getElementById('admin-badge').classList.remove('hidden');
+                    } else {
+                        document.getElementById('admin-badge').classList.add('hidden');
+                    }
+                    
                     const res = await fetch('/api/ads');
                     const ads = await res.json();
                     const container = document.getElementById('ads-container');
@@ -210,12 +244,12 @@ app.get('/', (req, res) => {
 
                     ads.forEach(ad => {
                         container.innerHTML += \`
-                            <div class="p-3 border rounded flex justify-between items-center bg-gray-50">
+                            <div class="p-3 bg-gray-800/40 border border-gray-800 rounded-lg flex justify-between items-center hover:bg-gray-800 transition">
                                 <div>
-                                    <h4 class="font-bold text-sm">\${ad.title}</h4>
-                                    <p class="text-xs text-green-600 font-semibold">+ LKR \${ad.reward}</p>
+                                    <h4 class="font-bold text-xs text-gray-200">\${ad.title}</h4>
+                                    <p class="text-[11px] text-emerald-400 font-semibold mt-0.5">+ LKR \${ad.reward}</p>
                                 </div>
-                                <button onclick="watchAd(\${ad.id}, \${ad.duration})" class="bg-blue-600 text-white px-3 py-1 text-sm rounded hover:bg-blue-700 cursor-pointer">View Ad</button>
+                                <button onclick="watchAd(\${ad.id}, \${ad.duration})" class="bg-indigo-600 text-white px-3 py-1.5 text-xs font-bold rounded-md hover:bg-indigo-500 transition cursor-pointer">View Ad</button>
                             </div>
                         \`;
                     });
