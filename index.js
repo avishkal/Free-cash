@@ -205,22 +205,21 @@ app.get('/', (req, res) => {
                     <!-- Withdraw Button -->
                     <button type="button" onclick="openWithdrawModal()" class="w-full bg-purple-600 text-white py-2.5 rounded-lg font-bold text-sm mb-6 hover:bg-purple-500 transition cursor-pointer shadow-lg shadow-purple-900/30">Request Bank Withdrawal</button>
 
-                    <h2 class="text-sm font-semibold text-gray-300 mb-3">Available Advertisements</h2>
-                    <div id="ads-container" class="space-y-3 max-h-60 overflow-y-auto pr-1"></div>
+                    <!-- Auto Play Status Box -->
+                    <div class="bg-indigo-950/40 border border-indigo-900/50 p-4 rounded-xl mb-4 text-center">
+                        <h2 class="text-xs font-bold text-indigo-300 uppercase tracking-wider mb-1">Auto-Play Status</h2>
+                        <p id="auto-status" class="text-sm font-semibold text-emerald-400">Initializing auto-play...</p>
+                        <div id="auto-timer" class="text-3xl font-black text-indigo-400 my-2">--</div>
+                    </div>
+
+                    <h2 class="text-sm font-semibold text-gray-300 mb-3">Advertisement Status</h2>
+                    <div id="ads-container" class="space-y-3 max-h-48 overflow-y-auto pr-1"></div>
                 </div>
 
             </div>
 
-            <!-- Ad Timer Modal -->
-            <div id="modal" class="hidden fixed inset-0 bg-black/80 flex flex-col justify-center items-center p-4 z-50">
-                <div class="bg-gray-900 border border-gray-800 p-6 rounded-2xl max-w-sm w-full text-center shadow-2xl relative">
-                    <h3 class="text-base font-bold text-gray-200 mb-1">Viewing Advertisement...</h3>
-                    <p id="timer" class="text-5xl font-black text-indigo-400 my-4">5</p>
-                    <p class="text-xs text-gray-400 mb-4">Please stay on this window until the timer finishes.</p>
-                    
-                    <div id="adsterra-banner-box" class="flex justify-center items-center min-h-[50px] bg-gray-950/50 p-2 rounded-lg border border-gray-800 overflow-hidden"></div>
-                </div>
-            </div>
+            <!-- Hidden Container for Loading Ad Scripts safely -->
+            <div id="hidden-ad-container" class="hidden"></div>
 
             <!-- Bank Withdraw Modal -->
             <div id="withdraw-modal" class="hidden fixed inset-0 bg-black/80 flex justify-center items-center p-4 z-50">
@@ -256,6 +255,7 @@ app.get('/', (req, res) => {
                 let currentUser = localStorage.getItem('ptc_user') || null;
                 let currentBalance = parseFloat(localStorage.getItem('ptc_balance')) || 0.00;
                 let isAdmin = localStorage.getItem('ptc_is_admin') === 'true';
+                let isAutoPlaying = false;
 
                 function switchTab(tab) {
                     if (tab === 'login') {
@@ -332,6 +332,7 @@ app.get('/', (req, res) => {
                     currentUser = null;
                     currentBalance = 0.00;
                     isAdmin = false;
+                    isAutoPlaying = false;
                     localStorage.clear();
                     checkAuth();
                 }
@@ -364,60 +365,91 @@ app.get('/', (req, res) => {
                         container.innerHTML = '';
 
                         ads.forEach(ad => {
-                            const encodedScript = encodeURIComponent(ad.script);
                             container.innerHTML += \`
-                                <div class="p-3 bg-gray-800/40 border border-gray-800 rounded-lg flex justify-between items-center hover:bg-gray-800 transition">
+                                <div id="ad-item-\${ad.id}" class="p-3 bg-gray-800/40 border border-gray-800 rounded-lg flex justify-between items-center">
                                     <div>
                                         <h4 class="font-bold text-xs text-gray-200">\${ad.title}</h4>
                                         <p class="text-[11px] text-emerald-400 font-semibold mt-0.5">+ LKR \${ad.reward}</p>
                                     </div>
-                                    <button type="button" onclick="watchAd(\${ad.id}, \${ad.duration}, '\${encodedScript}')" class="bg-indigo-600 text-white px-3 py-1.5 text-xs font-bold rounded-md hover:bg-indigo-500 transition cursor-pointer">View Ad</button>
+                                    <span id="ad-status-\${ad.id}" class="text-[10px] font-bold px-2 py-1 bg-gray-700 text-gray-300 rounded-md">Waiting</span>
                                 </div>
                             \`;
                         });
+
+                        // Start Auto Play sequence if not already running
+                        if (!isAutoPlaying) {
+                            startAutoPlaySequence(ads);
+                        }
                     } catch (err) {
                         console.error(err);
                     }
                 }
 
-                function watchAd(adId, duration, encodedScript) {
-                    const modal = document.getElementById('modal');
-                    const timerEl = document.getElementById('timer');
-                    const adBox = document.getElementById('adsterra-banner-box');
-                    
-                    adBox.innerHTML = decodeURIComponent(encodedScript);
-                    modal.classList.remove('hidden');
-                    
-                    let timeLeft = duration;
-                    timerEl.innerText = timeLeft;
+                async function startAutoPlaySequence(ads) {
+                    isAutoPlaying = true;
+                    const statusText = document.getElementById('auto-status');
+                    const timerText = document.getElementById('auto-timer');
+                    const hiddenContainer = document.getElementById('hidden-ad-container');
 
-                    const interval = setInterval(async () => {
-                        timeLeft--;
-                        timerEl.innerText = timeLeft;
+                    for (let i = 0; i < ads.length; i++) {
+                        let ad = ads[i];
+                        if (!currentUser) break; // If logged out, stop
 
-                        if (timeLeft <= 0) {
-                            clearInterval(interval);
-                            modal.classList.add('hidden');
-                            adBox.innerHTML = '';
-
-                            try {
-                                const res = await fetch('/api/watch-ad', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ username: currentUser, adId })
-                                });
-                                const data = await res.json();
-                                if (data.success) {
-                                    currentBalance = data.newBalance;
-                                    localStorage.setItem('ptc_balance', currentBalance);
-                                    document.getElementById('dash-balance').innerText = currentBalance.toFixed(2);
-                                    alert(\`Success! LKR \${data.reward} added to your balance.\`);
-                                }
-                            } catch (err) {
-                                console.error(err);
-                            }
+                        const statusBadge = document.getElementById(\`ad-status-\${ad.id}\`);
+                        if (statusBadge) {
+                            statusBadge.innerText = "Playing...";
+                            statusBadge.className = "text-[10px] font-bold px-2 py-1 bg-indigo-500/20 text-indigo-400 rounded-md border border-indigo-500/30";
                         }
-                    }, 1000);
+
+                        statusText.innerText = \`Playing: \${ad.title}\`;
+                        
+                        // Inject Ad Script
+                        hiddenContainer.innerHTML = ad.script;
+
+                        let timeLeft = ad.duration;
+                        timerText.innerText = timeLeft;
+
+                        // Countdown loop for this ad
+                        await new Promise((resolve) => {
+                            const interval = setInterval(() => {
+                                timeLeft--;
+                                timerText.innerText = timeLeft;
+
+                                if (timeLeft <= 0) {
+                                    clearInterval(interval);
+                                    resolve();
+                                }
+                            }, 1000);
+                        });
+
+                        hiddenContainer.innerHTML = ''; // Clear script
+
+                        // Send reward request to server
+                        try {
+                            const res = await fetch('/api/watch-ad', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ username: currentUser, adId: ad.id })
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                                currentBalance = data.newBalance;
+                                localStorage.setItem('ptc_balance', currentBalance);
+                                document.getElementById('dash-balance').innerText = currentBalance.toFixed(2);
+
+                                if (statusBadge) {
+                                    statusBadge.innerText = "Completed";
+                                    statusBadge.className = "text-[10px] font-bold px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded-md border border-emerald-500/30";
+                                }
+                            }
+                        } catch (err) {
+                            console.error(err);
+                        }
+                    }
+
+                    statusText.innerText = "All advertisements completed! 🎉";
+                    timerText.innerText = "✔";
+                    isAutoPlaying = false;
                 }
 
                 function openWithdrawModal() {
