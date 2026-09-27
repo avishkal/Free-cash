@@ -16,7 +16,8 @@ let ads = [
         title: "Crypto Exchange Banner Ad", 
         reward: 5.00, 
         type: "banner",
-        content: `<script src="https://pl31523805.profitableratecpmnetwork.com/d5/03/82/d50382b8c9fcd1632430879e8c5ffc14.js"></script>`
+        content: `<script src="https://pl31523805.profitableratecpmnetwork.com/d5/03/82/d50382b8c9fcd1632430879e8c5ffc14.js"></script>`,
+        url: "https://www.profitableratecpmnetwork.com/sa6isizp1?key=16f08e32604d1a72f879384b894d9b64"
     },
     { 
         id: 2, 
@@ -34,7 +35,8 @@ let ads = [
               };
             </script>
             <script src="https://www.highrevenueformat.com/2e779619893af02539fc45624ffb5c30/invoke.js"></script>
-        `
+        `,
+        url: "https://www.profitableratecpmnetwork.com/sa6isizp1?key=16f08e32604d1a72f879384b894d9b64"
     },
     { 
         id: 3, 
@@ -44,13 +46,15 @@ let ads = [
         content: `
             <script async="async" data-cfasync="false" src="https://pl31523808.profitableratecpmnetwork.com/6fdb76ef128e51cb4508880e53f89b7c/invoke.js"></script>
             <div id="container-6fdb76ef128e51cb4508880e53f89b7c"></div>
-        `
+        `,
+        url: "https://www.profitableratecpmnetwork.com/sa6isizp1?key=16f08e32604d1a72f879384b894d9b64"
     },
     { 
         id: 4, 
         title: "Direct Link Promotional Ad", 
         reward: 4.50, 
         type: "link",
+        content: `<p class="text-xs text-gray-400">Click below to visit our promotional partner link.</p>`,
         url: "https://www.profitableratecpmnetwork.com/sa6isizp1?key=16f08e32604d1a72f879384b894d9b64"
     }
 ];
@@ -328,11 +332,6 @@ app.get('/', (req, res) => {
                         container.innerHTML = '';
 
                         ads.forEach(ad => {
-                            let adContentHtml = '';
-                            if (ad.type === 'banner') {
-                                adContentHtml = \`<div class="my-2 p-2 bg-gray-900 rounded flex justify-center">\${ad.content}</div>\`;
-                            }
-
                             container.innerHTML += \`
                                 <div class="p-3 bg-gray-800/40 border border-gray-800 rounded-xl space-y-2">
                                     <div class="flex justify-between items-center">
@@ -340,17 +339,19 @@ app.get('/', (req, res) => {
                                             <h4 class="font-bold text-xs text-gray-200">\${ad.title}</h4>
                                             <p class="text-[11px] text-emerald-400 font-semibold mt-0.5">+ LKR \${ad.reward}</p>
                                         </div>
-                                        <button onclick="watchAd(\${ad.id}, '\${ad.type}', '\${ad.url || ''}')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer">View Ad</button>
+                                        <button onclick="watchAd(\${ad.id}, '\${ad.url}')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer">View Ad</button>
                                     </div>
-                                    \${adContentHtml}
+                                    <div class="my-2 p-2 bg-gray-900 rounded flex justify-center overflow-hidden">
+                                        \${ad.content}
+                                    </div>
                                 </div>
                             \`;
                         });
                     } catch (err) { console.error(err); }
                 }
 
-                async function watchAd(adId, type, url) {
-                    if (type === 'link' && url) {
+                async function watchAd(adId, url) {
+                    if (url) {
                         window.open(url, '_blank');
                     }
 
